@@ -121,7 +121,7 @@ Worker can accept suggested coverage or choose from predefined tiers (Basic/Plus
 
 ## 5. AI/ML Components
 
-AegisShield uses AI/ML in three core areas, as required by the problem statement:[file:2]
+AegisShield uses AI/ML in three core areas, as required by the problem statement:
 
 1. **Risk Profiling & Weekly Premium Prediction**  
    - Input: historical trips, hours, zones, disruption history, seasonality, and persona-level priors.  
@@ -144,7 +144,7 @@ For Phase 1, AI/ML is primarily **designed and planned**; initial implementation
 
 ### Platform Choice
 
-For DEVTrails 2026, we prioritize a **responsive Web application** for both worker and insurer dashboards, with a **mobile-first design** so it can be wrapped into a mobile app in later iterations.[file:2]
+For DEVTrails 2026, we prioritize a **responsive Web application** for both worker and insurer dashboards, with a **mobile-first design** so it can be wrapped into a mobile app in later iterations.
 
 ### Indicative Tech Stack
 
@@ -247,7 +247,7 @@ This transforms our system from “GPS-based payout vending machine” into a **
 
 ### Phase 1 – Ideation & Foundation (Weeks 1–2)
 
-**Theme**: “Know Your Delivery Worker & Design the Brain.”[file:2]
+**Theme**: “Know Your Delivery Worker & Design the Brain.”
 
 Deliverables from this repo:
 
@@ -255,7 +255,7 @@ Deliverables from this repo:
   - Persona, problem framing, and full workflow.  
   - Weekly pricing model & parametric triggers.  
   - AI/ML integration plan.  
-  - Adversarial Defense & Anti-Spoofing Strategy (Market Crash).[file:2][file:3]  
+  - Adversarial Defense & Anti-Spoofing Strategy (Market Crash).
   - Tech stack and high-level architecture.  
 - Minimal prototype:
   - Clickable UX flow (wireframes or simple UI) for onboarding and coverage view.  
