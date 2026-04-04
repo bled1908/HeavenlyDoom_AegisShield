@@ -1,0 +1,25 @@
+{
+  "name": "aegisshield-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AegisShield – AI-Powered Parametric Income Insurance for Delivery Workers",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "dev:ml": "cd ml-service && uvicorn app.main:app --reload --port 8000",
+    "build:backend": "pnpm --filter backend build",
+    "build:frontend": "pnpm --filter frontend build",
+    "lint": "pnpm --filter backend lint && pnpm --filter frontend lint",
+    "test": "pnpm --filter backend test && pnpm --filter frontend test",
+    "docker:up": "cd infra && docker compose up --build -d",
+    "docker:down": "cd infra && docker compose down",
+    "docker:logs": "cd infra && docker compose logs -f"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

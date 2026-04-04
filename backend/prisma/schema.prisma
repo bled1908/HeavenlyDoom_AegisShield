@@ -1,0 +1,248 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  WORKER
+  INSURER
+  ADMIN
+}
+
+enum Platform {
+  ZOMATO
+  SWIGGY
+  ZEPTO
+  AMAZON
+  FLIPKART
+  DUNZO
+  OTHER
+}
+
+enum PolicyTier {
+  BASIC
+  PLUS
+  MAX
+}
+
+enum PolicyStatus {
+  ACTIVE
+  LAPSED
+  CANCELLED
+  PENDING
+}
+
+enum DisruptionType {
+  WEATHER
+  SOCIAL
+  PLATFORM
+  ENVIRONMENTAL
+}
+
+enum DisruptionSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  PARTIAL
+  ESCALATED
+  REJECTED
+}
+
+enum PayoutStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum FraudSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+// ─── Models ──────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(WORKER)
+  worker       Worker?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
+model Worker {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name                String
+  phone               String    @unique
+  city                String
+  zones               String[]  // list of zone IDs/names
+  platform            Platform
+  weeklyBaseEarning   Decimal   @db.Decimal(10, 2)
+  avgHoursPerDay      Float
+  workingDaysPerWeek  Int       @default(6)
+  riskScore           Float?    // 0–100, from ML service
+  deviceFingerprint   String?
+  deviceFlags         Json?     // emulator, mock-location flags
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  policies     Policy[]
+  claims       Claim[]
+  fraudSignals FraudSignal[]
+  locationLogs LocationLog[]
+
+  @@index([city])
+  @@index([phone])
+  @@map("workers")
+}
+
+model Policy {
+  id                String       @id @default(cuid())
+  workerId          String
+  worker            Worker       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  tier              PolicyTier
+  weeklyPremium     Decimal      @db.Decimal(10, 2)
+  minPayout         Decimal      @db.Decimal(10, 2)  // coverage band lower
+  maxPayout         Decimal      @db.Decimal(10, 2)  // coverage band upper
+  status            PolicyStatus @default(ACTIVE)
+  weekStart         DateTime
+  weekEnd           DateTime
+  autoRenew         Boolean      @default(true)
+  premiumPaidAt     DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  claims Claim[]
+
+  @@index([workerId])
+  @@index([status])
+  @@index([weekStart, weekEnd])
+  @@map("policies")
+}
+
+model DisruptionEvent {
+  id          String             @id @default(cuid())
+  zone        String
+  type        DisruptionType
+  severity    DisruptionSeverity
+  title       String
+  description String?
+  source      String             // "openweather", "mock", "manual"
+  startTime   DateTime
+  endTime     DateTime?
+  verified    Boolean            @default(false)
+  rawData     Json?              // raw API response
+  createdAt   DateTime           @default(now())
+
+  claims Claim[]
+
+  @@index([zone])
+  @@index([startTime])
+  @@index([type])
+  @@map("disruption_events")
+}
+
+model Claim {
+  id                  String      @id @default(cuid())
+  policyId            String
+  policy              Policy      @relation(fields: [policyId], references: [id])
+  workerId            String
+  worker              Worker      @relation(fields: [workerId], references: [id])
+  disruptionEventId   String
+  disruptionEvent     DisruptionEvent @relation(fields: [disruptionEventId], references: [id])
+
+  expectedEarning     Decimal     @db.Decimal(10, 2)
+  actualEarning       Decimal     @db.Decimal(10, 2)
+  lostEarning         Decimal     @db.Decimal(10, 2)
+  payoutAmount        Decimal?    @db.Decimal(10, 2)
+
+  status              ClaimStatus @default(PENDING)
+  fraudScore          Float?      // 0–100 total risk score
+  locationTrustScore  Float?      // 0–100 from location engine
+  behavioralFlags     Json?
+  networkFlags        Json?
+  reviewNotes         String?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  payout PayoutLedger?
+
+  @@index([workerId])
+  @@index([policyId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("claims")
+}
+
+model PayoutLedger {
+  id           String       @id @default(cuid())
+  claimId      String       @unique
+  claim        Claim        @relation(fields: [claimId], references: [id])
+  amount       Decimal      @db.Decimal(10, 2)
+  method       String       @default("UPI_SIMULATION")
+  status       PayoutStatus @default(QUEUED)
+  externalRef  String?      // Razorpay payment ID or sim ref
+  failureReason String?
+  processedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([status])
+  @@map("payout_ledger")
+}
+
+model FraudSignal {
+  id          String        @id @default(cuid())
+  workerId    String
+  worker      Worker        @relation(fields: [workerId], references: [id])
+  signalType  String        // GPS_SPOOF, DEVICE_EMULATOR, BEHAVIORAL_ANOMALY, NETWORK_CLUSTER
+  severity    FraudSeverity
+  metadata    Json
+  detectedAt  DateTime      @default(now())
+
+  @@index([workerId])
+  @@index([signalType])
+  @@index([detectedAt])
+  @@map("fraud_signals")
+}
+
+model LocationLog {
+  id          String   @id @default(cuid())
+  workerId    String
+  worker      Worker   @relation(fields: [workerId], references: [id])
+  latitude    Float
+  longitude   Float
+  accuracy    Float?
+  speed       Float?
+  source      String   // GPS, NETWORK, PLATFORM
+  trustScore  Float?
+  recordedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  @@index([workerId, recordedAt])
+  @@map("location_logs")
+}
