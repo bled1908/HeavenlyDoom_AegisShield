@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 export const metadata: Metadata = {
   title: 'AegisShield – Income Protection for Delivery Workers',
   description:
-    'AI-powered parametric insurance that automatically protects India's delivery workers from income loss due to weather, outages, and disruptions.',
+    "AI-powered parametric insurance that automatically protects India's delivery workers from income loss due to weather, outages, and disruptions.",
   keywords: 'parametric insurance, delivery workers, income protection, gig economy, India',
   openGraph: {
     title: 'AegisShield',
